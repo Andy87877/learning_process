@@ -1,3 +1,4 @@
+from ctypes.wintypes import HICON
 import pygame
 
 FPS = 60 # 一秒跑60次
@@ -23,9 +24,13 @@ class Player(pygame.sprite.Sprite): # 創建類別 可以繼承內建sprite類�
         self.image.fill(GREEN)
         # rect是定位圖片
         self.rect = self.image.get_rect() # 圖片框起來
+
         # 座標
-        self.rect.x = 200
-        self.rect.y = 200
+        self.rect.center = (WIDTH/2, HEIGHT/2) # 中心點
+    
+    def update(self): # 讓player移動
+        self.rect.x += 2 # 往右
+        #if self.rect
 
 #可以顯示出來
 all_sprites = pygame.sprite.Group() # 創建sprite的群組
@@ -42,6 +47,7 @@ while running:
             running = False # 退出遊戲迴圈
     
     # 更新遊戲
+    all_sprites.update() # 執行all_sprites的updataa函式
     
     # 畫面顯示
     screen.fill(WHITE) # 填滿顏色(R,G,B)
