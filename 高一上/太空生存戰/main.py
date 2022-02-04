@@ -50,6 +50,7 @@ class Player(pygame.sprite.Sprite): # 飛船
     def shoot(self): # 發射子彈
         bullet = Bullet(self.rect.centerx, self.rect.top) # 回傳飛船座標
         all_sprites.add(bullet) # 子彈加入群組
+        bullets.add(bullet) # 判斷子彈是否碰撞的群組
 
 
 class Rock(pygame.sprite.Sprite): # 隕石
@@ -101,11 +102,16 @@ class Bullet(pygame.sprite.Sprite): # 子彈
         
 # sprite可以顯示出來
 all_sprites = pygame.sprite.Group() # 創建sprite的群組
+
+rocks = pygame.sprite.Group() # 判斷隕石是否碰撞
+bullets = pygame.sprite.Group() # 判斷子彈是否碰撞
+
 player = Player() # 創建player
 all_sprites.add(player) # player加入sprite群組
 for i in range(8): # 8個隕石
     rock = Rock() # 創建隕石
     all_sprites.add(rock) # 隕石加入sprite群組
+    rocks.add(rock) # 判斷隕石是否碰撞的群組
 
 # 遊戲迴圈
 while running:
@@ -118,9 +124,21 @@ while running:
         elif event.type == pygame.KEYDOWN: # 按下鍵盤鍵
             if event.key == pygame.K_SPACE: # 按下空白鍵
                 player.shoot() # 發射子彈
+
     # 更新遊戲
-    all_sprites.update() # 執行all_sprites的updataa函式
-    
+    all_sprites.update() # 執行all_sprites的update函式
+
+    # 判斷子彈和隕石是否碰撞(sprites,sprites,前面是否刪除,後面是否刪除)
+    hits = pygame.sprite.groupcollide(rocks, bullets, True, True) 
+    for hit in hits: # 補回隕石
+        r = Rock()
+        all_sprites.add(r)
+        rocks.add(r)
+    # 判斷飛船和隕石是否碰撞
+    hits = pygame.sprite.spritecollide(player, rocks, False) 
+    if hits:
+        running = False
+
     # 畫面顯示
     screen.fill(BLACK) # 填滿顏色(R,G,B)
     all_sprites.draw(screen) # 顯示sprite
