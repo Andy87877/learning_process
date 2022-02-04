@@ -25,3 +25,4 @@ while running:
     # 畫面顯示
     screen.fill(WHITE) # 填滿顏色(R,G,B)
     pygame.display.update() # 畫面更新
+    
