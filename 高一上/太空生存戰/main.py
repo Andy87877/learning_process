@@ -30,7 +30,9 @@ class Player(pygame.sprite.Sprite): # 創建類別 可以繼承內建sprite類�
     
     def update(self): # 讓player移動
         self.rect.x += 2 # 往右
-        #if self.rect
+        if self.rect.left > WIDTH: # 太右邊
+            self.rect.right = 0 # 到最左邊
+
 
 #可以顯示出來
 all_sprites = pygame.sprite.Group() # 創建sprite的群組
