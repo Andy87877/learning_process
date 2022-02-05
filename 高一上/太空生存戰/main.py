@@ -36,6 +36,9 @@ class Player(pygame.sprite.Sprite): # 飛船
         self.image.set_colorkey(BLACK) # 把黑色變成透明
         # rect是定位圖片
         self.rect = self.image.get_rect() # 圖片框起來
+        # 碰撞判斷
+        self.radius = 20 # 圓形半徑
+        # pygame.draw.circle(self.image, RED, self.rect.center, self.radius) # 畫出圓形
   
         # 起始位置
         self.rect.centerx = WIDTH / 2 # x座標
@@ -69,6 +72,9 @@ class Rock(pygame.sprite.Sprite): # 隕石
         self.image.set_colorkey(BLACK) # 把黑色變成透明
         # rect是定位圖片
         self.rect = self.image.get_rect() # 圖片框起來
+        # 碰撞判斷
+        self.radius = self.rect.width * 0.85 / 2 # 圓形半徑
+        # pygame.draw.circle(self.image, RED, self.rect.center, self.radius) # 畫出圓形
 
         # 起始位置(隨機生成)
         self.rect.x = random.randrange(0, WIDTH - self.rect.width) # x座標
@@ -142,10 +148,11 @@ while running:
         r = Rock()
         all_sprites.add(r)
         rocks.add(r)
+
     # 判斷飛船和隕石是否碰撞
-    hits = pygame.sprite.spritecollide(player, rocks, False) 
-    if hits:
-        running = False
+    hits = pygame.sprite.spritecollide(player, rocks, False, pygame.sprite.collide_circle) # 判斷方式是圓形 
+    if hits: # 如果碰到
+        running = False # 退出遊戲迴圈
 
     # 畫面顯示
     screen.fill(BLACK) # 填滿顏色(R,G,B)
