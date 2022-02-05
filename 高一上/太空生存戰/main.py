@@ -24,6 +24,8 @@ running = True # 執行遊戲迴圈
 # (os.path是python檔案現在的路徑 img是圖片的資料夾 convert是轉變成pygame容易讀的格式)
 background_img = pygame.image.load(os.path.join("img", "background.png")).convert() # 載入背景圖片路徑 
 player_img = pygame.image.load(os.path.join("img", "player.png")).convert() # 載入飛船圖片路徑  
+player_mini_img = pygame.transform.scale(player_img, (25, 19)) # 變成小飛船(檢視還有幾條命)
+player_mini_img.set_colorkey(BLACK) # 把黑色變成透明
 bullet_img = pygame.image.load(os.path.join("img", "bullet.png")).convert() # 載入子彈圖片路徑 
 # rock_img = pygame.image.load(os.path.join("img", "rock.png")).convert() # 載入隕石圖片路徑 
 rock_imgs = [] # 隕石存在列表裡
@@ -33,14 +35,20 @@ for i in range(7):
 expl_anim = {} # 爆炸動畫圖片
 expl_anim['lg'] = [] # 大爆炸
 expl_anim['sm'] = [] # 小爆炸
+expl_anim['player'] = [] # 飛船爆炸
 for i in range(9):
-    expl_img = pygame.image.load(os.path.join("img", f"expl{i}.png")).convert() # 載入爆炸圖片路徑到list裡面
+    expl_img = pygame.image.load(os.path.join("img", f"expl{i}.png")).convert() # 載入隕石爆炸圖片路徑到list裡面
     expl_img.set_colorkey(BLACK) # 把黑色變成透明
     expl_anim['lg'].append(pygame.transform.scale(expl_img, (75, 75))) # 大爆炸字典 改大小
     expl_anim['sm'].append(pygame.transform.scale(expl_img, (30, 30))) # 小爆炸字典 改大小
 
+    player_expl_img = pygame.image.load(os.path.join("img", f"player_expl{i}.png")).convert() # 載入飛船爆炸圖片路徑到list裡面
+    player_expl_img.set_colorkey(BLACK) # 把黑色變成透明
+    expl_anim['player'].append(player_expl_img) # 飛船爆炸字典
+
 # 載入音效
 shoot_sound = pygame.mixer.Sound(os.path.join("sound", "shoot.wav")) # 載入射擊音效
+die_sound = pygame.mixer.Sound(os.path.join("sound", "rumble.wav")) # 載入飛船死亡音效
 expl_sounds = [
     pygame.mixer.Sound(os.path.join("sound", "expl0.wav")),
     pygame.mixer.Sound(os.path.join("sound", "expl1.wav")) 
@@ -75,6 +83,13 @@ def draw_health(surf, hp, x, y): # 顯示血量
     pygame.draw.rect(surf, GREEN, fill_rect) # 顯示血量
     pygame.draw.rect(surf, WHITE, outline_rect, 2) # 顯示外框
 
+def draw_lives(surf, lives, img, x, y): # 顯示幾條命
+    for i in range(lives): # 有幾條命
+        img_rect = img.get_rect() # 圖片定位
+        img_rect.x = x + 32*i # x定位於
+        img_rect.y = y # y定位於
+        surf.blit(img, img_rect) # 顯示出來
+
 # sprite
 # 創建類別 可以繼承內建sprite類別(pygame.sprite.Sprite)
 class Player(pygame.sprite.Sprite): # 飛船
@@ -94,9 +109,17 @@ class Player(pygame.sprite.Sprite): # 飛船
         self.rect.bottom = HEIGHT - 10 # y座標
 
         self.speedx = 8 # 移動速度
-        self.health = 100 # 生命值
+        self.health = 100 # 血量
+        self.lives = 3 # 生命
+        self.hidden = False # 飛船是否隱藏
+        self.hide_time = 0 # 隱藏時間
     
     def update(self): # 讓player移動
+        if self.hidden and pygame.time.get_ticks() - self.hide_time > 1000: # 如果隱藏和延遲時間已到
+            self.hidden = False # 解除隱藏
+            self.rect.centerx = WIDTH / 2 # x座標
+            self.rect.bottom = HEIGHT - 10 # y座標
+
         key_pressed = pygame.key.get_pressed() # 鍵盤有沒有被按
         if key_pressed[pygame.K_d] or key_pressed[pygame.K_RIGHT]: # 鍵盤d鍵or右鍵被按
              self.rect.x += self.speedx # 往右
@@ -109,10 +132,17 @@ class Player(pygame.sprite.Sprite): # 飛船
             self.rect.left = 0
 
     def shoot(self): # 發射子彈
-        bullet = Bullet(self.rect.centerx, self.rect.top) # 回傳飛船座標
-        all_sprites.add(bullet) # 子彈加入群組
-        bullets.add(bullet) # 判斷子彈是否碰撞的群組
-        shoot_sound.play() # 播出音效 
+        if not(self.hidden): # 如果不隱藏
+            bullet = Bullet(self.rect.centerx, self.rect.top) # 回傳飛船座標
+            all_sprites.add(bullet) # 子彈加入群組
+            bullets.add(bullet) # 判斷子彈是否碰撞的群組
+            shoot_sound.play() # 播出音效 
+
+    def hide(self): # 隱藏
+        self.hidden = True # 已經隱藏
+        self.hide_time = pygame.time.get_ticks() # 紀錄隱藏時間
+        self.rect.center = (WIDTH/2, HEIGHT+500) # 移除遊戲畫面
+
 
 class Rock(pygame.sprite.Sprite ): # 隕石
     def __init__(self): # 是__init__ 不是_init_
@@ -207,6 +237,7 @@ class Explosion(pygame.sprite.Sprite): # 爆炸動畫
                 center = self.rect.center # 中心點
                 self.rect = self.image.get_rect() # 重新定位中心點
                 self.rect.center = center # 新的中心點
+
 # sprite可以顯示出來
 all_sprites = pygame.sprite.Group() # 創建sprite的群組
 
@@ -215,7 +246,7 @@ bullets = pygame.sprite.Group() # 判斷子彈是否碰撞
 
 player = Player() # 創建player
 all_sprites.add(player) # player加入sprite群組
-for i in range(10): # 10個隕石
+for i in range(20): # 20個隕石
     new_rock()
 
 score = 0 # 分數
@@ -249,11 +280,21 @@ while running:
     hits = pygame.sprite.spritecollide(player, rocks, True, pygame.sprite.collide_circle) # 判斷方式是圓形 
     for hit in hits: # 如果碰到
         player.health -= hit.radius # 扣血
+        random.choice(expl_sounds).play()
         new_rock() # 補回隕石
-        expl = Explosion(hit.rect.center, 'sm') # 爆炸動畫
+        expl = Explosion(hit.rect.center, 'sm') # 隕石爆炸動畫
         all_sprites.add(expl) # expl加入sprite群組
+
         if player.health <= 0: # 血量歸零
-            running = False # 退出遊戲迴圈
+            death_expl = Explosion(player.rect.center, 'player') # 死亡爆炸動畫
+            all_sprites.add(death_expl) # die加入sprite群組
+            die_sound.play() # 播放死亡音效
+            player.lives -= 1 # 生命值-1
+            player.health = 100 # 血量回滿
+            player.hide() # 飛船隱藏
+
+    if player.lives == 0 and not(death_expl.alive()): # 生命值歸零 and 執行完die
+        running = False # 退出遊戲迴圈
 
     # 畫面顯示
     screen.fill(BLACK) # 填滿顏色(R,G,B)
@@ -261,5 +302,6 @@ while running:
     all_sprites.draw(screen) # 顯示sprite
     draw_text(screen, str(score), 18, WIDTH/2, 10) # 顯示遊戲分數
     draw_health(screen, player.health, 5, 15) # 顯示血條
+    draw_lives(screen, player.lives, player_mini_img, WIDTH - 100, 15) # 顯示生命值
     pygame.display.update() # 畫面更新
     
