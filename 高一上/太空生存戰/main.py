@@ -14,6 +14,7 @@ BLACK = (0,0,0) # 黑色
 
 # 遊戲初始化 and 創建視窗
 pygame.init() # 遊戲初始化
+pygame.mixer.init() # 音效初始化
 screen = pygame.display.set_mode((WIDTH, HEIGHT)) # 設定長寬
 clock = pygame.time.Clock() # 定義電腦一秒跑幾次 
 pygame.display.set_caption("太空生存戰") # 更改遊戲標題
@@ -28,6 +29,15 @@ bullet_img = pygame.image.load(os.path.join("img", "bullet.png")).convert() # �
 rock_imgs = [] # 隕石存在列表裡
 for i in range(7):
     rock_imgs.append(pygame.image.load(os.path.join("img", f"rock{i}.png")).convert()) # 載入隕石圖片路徑到list裡面
+
+# 載入音效
+shoot_sound = pygame.mixer.Sound(os.path.join("sound", "shoot.wav")) # 載入射擊音效
+expl_sounds = [
+    pygame.mixer.Sound(os.path.join("sound", "expl0.wav")),
+    pygame.mixer.Sound(os.path.join("sound", "expl1.wav")) 
+] # 隕石爆炸的音效存載列表裡
+pygame.mixer.music.load(os.path.join("sound", "background.wav")) # 背景音樂
+pygame.mixer.music.set_volume(0.4) # 調整背景音樂大小
 
 font_name = pygame.font.match_font('arial') # 引入字體
 def draw_text(surf, text, size, x, y): # 把文字顯示在畫面上
@@ -59,6 +69,7 @@ class Player(pygame.sprite.Sprite): # 飛船
         self.rect.bottom = HEIGHT - 10 # y座標
 
         self.speedx = 8 # 移動速度
+        self.health = 100 # 生命值
     
     def update(self): # 讓player移動
         key_pressed = pygame.key.get_pressed() # 鍵盤有沒有被按
@@ -76,6 +87,7 @@ class Player(pygame.sprite.Sprite): # 飛船
         bullet = Bullet(self.rect.centerx, self.rect.top) # 回傳飛船座標
         all_sprites.add(bullet) # 子彈加入群組
         bullets.add(bullet) # 判斷子彈是否碰撞的群組
+        shoot_sound.play() # 播出音效 
 
 class Rock(pygame.sprite.Sprite ): # 隕石
     def __init__(self): # 是__init__ 不是_init_
@@ -158,6 +170,7 @@ for i in range(8): # 8個隕石
     rocks.add(rock) # 判斷隕石是否碰撞的群組
 
 score = 0 # 分數
+pygame.mixer.music.play(-1) # 播出背景音樂
 
 # 遊戲迴圈
 while running:
@@ -176,16 +189,17 @@ while running:
 
     # 判斷子彈和隕石是否碰撞(sprites,sprites,前面是否刪除,後面是否刪除)
     hits = pygame.sprite.groupcollide(rocks, bullets, True, True) 
-    for hit in hits: # hits 是字典
+    for hit in hits: # hits 是列表
         score += hit.radius # 加分數
+        random.choice(expl_sounds).play() # 播出爆炸音效 
         # 補回隕石
         r = Rock()
         all_sprites.add(r)
         rocks.add(r)
 
     # 判斷飛船和隕石是否碰撞
-    hits = pygame.sprite.spritecollide(player, rocks, False, pygame.sprite.collide_circle) # 判斷方式是圓形 
-    if hits: # 如果碰到
+    hits = pygame.sprite.spritecollide(player, rocks, True, pygame.sprite.collide_circle) # 判斷方式是圓形 
+    for hit in hits: # 如果碰到
         running = False # 退出遊戲迴圈
 
     # 畫面顯示
