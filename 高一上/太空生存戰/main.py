@@ -29,6 +29,16 @@ rock_imgs = [] # 隕石存在列表裡
 for i in range(7):
     rock_imgs.append(pygame.image.load(os.path.join("img", f"rock{i}.png")).convert()) # 載入隕石圖片路徑到list裡面
 
+font_name = pygame.font.match_font('arial') # 引入字體
+def draw_text(surf, text, size, x, y): # 把文字顯示在畫面上
+    font = pygame.font.Font(font_name, size) # 創建文字物件
+    text_surface = font.render(text, True, WHITE) # 渲染文字
+    # 定位文字
+    text_rect = text_surface.get_rect() 
+    text_rect.centerx = x
+    text_rect.top = y
+
+    surf.blit(text_surface, text_rect)# 顯示出來
 
 # sprite
 # 創建類別 可以繼承內建sprite類別(pygame.sprite.Sprite)
@@ -67,11 +77,11 @@ class Player(pygame.sprite.Sprite): # 飛船
         all_sprites.add(bullet) # 子彈加入群組
         bullets.add(bullet) # 判斷子彈是否碰撞的群組
 
-class Rock(pygame.sprite.Sprite): # 隕石
+class Rock(pygame.sprite.Sprite ): # 隕石
     def __init__(self): # 是__init__ 不是_init_
-        pygame.sprite.Sprite.__init__(self) # 內建的sprite的初始函式
+        pygame.sprite.Sprite.__init__(self) # 內建的sprite的初始函式  
         
-        # image是展現圖片
+        # image是展現圖片 
         self.image_ori = random.choice(rock_imgs) # 存沒有轉動的圖片 隨機選一張圖片
         self.image_ori.set_colorkey(BLACK) # 把黑色變成透明
         self.image = self.image_ori.copy() # 複製圖片
@@ -79,13 +89,13 @@ class Rock(pygame.sprite.Sprite): # 隕石
         # rect是定位圖片
         self.rect = self.image.get_rect() # 圖片框起來 
         # 碰撞判斷
-        self.radius = self.rect.width * 0.85 / 2 # 圓形半徑
+        self.radius = int(self.rect.width * 0.85 / 2) # 圓形半徑
         # pygame.draw.circle(self.image, RED, self.rect.center, self.radius) # 畫出圓形
 
         # 起始位置(隨機生成)
         self.rect.x = random.randrange(0, WIDTH - self.rect.width) # x座標
         self.rect.y = random.randrange(-180, -100) # y座標
-
+        
         # 隕石移動
         self.speedy = random.randrange(2, 10)
         self.speedx = random.randrange(-3, 3)
@@ -147,9 +157,11 @@ for i in range(8): # 8個隕石
     all_sprites.add(rock) # 隕石加入sprite群組
     rocks.add(rock) # 判斷隕石是否碰撞的群組
 
+score = 0 # 分數
+
 # 遊戲迴圈
 while running:
-    clock.tick(FPS) #一秒最多執行FPS次
+    clock.tick(FPS) # 一秒最多執行FPS次
     # 取得輸入
     for event in pygame.event.get(): 
         # pygame.event.get() 為發生的事件
@@ -164,7 +176,9 @@ while running:
 
     # 判斷子彈和隕石是否碰撞(sprites,sprites,前面是否刪除,後面是否刪除)
     hits = pygame.sprite.groupcollide(rocks, bullets, True, True) 
-    for hit in hits: # 補回隕石
+    for hit in hits: # hits 是字典
+        score += hit.radius # 加分數
+        # 補回隕石
         r = Rock()
         all_sprites.add(r)
         rocks.add(r)
@@ -178,5 +192,6 @@ while running:
     screen.fill(BLACK) # 填滿顏色(R,G,B)
     screen.blit(background_img, (0,0)) # 畫背景(圖,左上座標)
     all_sprites.draw(screen) # 顯示sprite
+    draw_text(screen, str(score), 18, WIDTH/2, 10) # 顯示遊戲分數
     pygame.display.update() # 畫面更新
     
