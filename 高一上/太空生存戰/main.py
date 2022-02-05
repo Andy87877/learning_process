@@ -23,8 +23,12 @@ running = True # 執行遊戲迴圈
 # (os.path是python檔案現在的路徑 img是圖片的資料夾 convert是轉變成pygame容易讀的格式)
 background_img = pygame.image.load(os.path.join("img", "background.png")).convert() # 載入背景圖片路徑 
 player_img = pygame.image.load(os.path.join("img", "player.png")).convert() # 載入飛船圖片路徑  
-rock_img = pygame.image.load(os.path.join("img", "rock.png")).convert() # 載入隕石圖片路徑 
 bullet_img = pygame.image.load(os.path.join("img", "bullet.png")).convert() # 載入子彈圖片路徑 
+# rock_img = pygame.image.load(os.path.join("img", "rock.png")).convert() # 載入隕石圖片路徑 
+rock_imgs = [] # 隕石存在列表裡
+for i in range(7):
+    rock_imgs.append(pygame.image.load(os.path.join("img", f"rock{i}.png")).convert()) # 載入隕石圖片路徑到list裡面
+
 
 # sprite
 # 創建類別 可以繼承內建sprite類別(pygame.sprite.Sprite)
@@ -63,28 +67,44 @@ class Player(pygame.sprite.Sprite): # 飛船
         all_sprites.add(bullet) # 子彈加入群組
         bullets.add(bullet) # 判斷子彈是否碰撞的群組
 
-
 class Rock(pygame.sprite.Sprite): # 隕石
     def __init__(self): # 是__init__ 不是_init_
         pygame.sprite.Sprite.__init__(self) # 內建的sprite的初始函式
+        
         # image是展現圖片
-        self.image = rock_img # 圖片
-        self.image.set_colorkey(BLACK) # 把黑色變成透明
+        self.image_ori = random.choice(rock_imgs) # 存沒有轉動的圖片 隨機選一張圖片
+        self.image_ori.set_colorkey(BLACK) # 把黑色變成透明
+        self.image = self.image_ori.copy() # 複製圖片
+        
         # rect是定位圖片
-        self.rect = self.image.get_rect() # 圖片框起來
+        self.rect = self.image.get_rect() # 圖片框起來 
         # 碰撞判斷
         self.radius = self.rect.width * 0.85 / 2 # 圓形半徑
         # pygame.draw.circle(self.image, RED, self.rect.center, self.radius) # 畫出圓形
 
         # 起始位置(隨機生成)
         self.rect.x = random.randrange(0, WIDTH - self.rect.width) # x座標
-        self.rect.y = random.randrange(-100, -40) # y座標
+        self.rect.y = random.randrange(-180, -100) # y座標
 
         # 隕石移動
         self.speedy = random.randrange(2, 10)
         self.speedx = random.randrange(-3, 3)
+
+        #隕石旋轉
+        self.total_degree = 0 # 總共角度
+        self.rot_degree = random.randrange(-3, 3) # 旋轉度數
     
+    def rotate(self): # 讓隕石旋轉
+        self.total_degree += self.rot_degree # 轉動總角度 
+        self.total_degree = self.total_degree % 360 # 0~359
+        self.image = pygame.transform.rotate(self.image_ori, self.total_degree) #旋轉圖片
+
+        center = self.rect.center # 中心點
+        self.rect = self.image.get_rect() # 重新定位中心點
+        self.rect.center = center # 新的中心點
+
     def update(self): # 讓隕石下墜
+        self.rotate() # 隕石旋轉
         self.rect.y += self.speedy
         self.rect.x += self.speedx
         if self.rect.top > HEIGHT or self.rect.left > WIDTH or self.rect.right == 0: # 掉到邊邊就重來
