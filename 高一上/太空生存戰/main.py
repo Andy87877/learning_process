@@ -1,5 +1,6 @@
 import pygame # pygame核心
 import random # 產生亂數
+import os # 載入圖片
 
 FPS = 60 # 一秒跑60次
 WIDTH = 500 # 寬
@@ -17,6 +18,10 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT)) # 設定長寬
 clock = pygame.time.Clock() # 定義電腦一秒跑幾次
 pygame.display.set_caption("太空生存戰") # 更改遊戲標題
 running = True # 執行遊戲迴圈
+
+# 載入圖片 
+# (os.path是python檔案現在的路徑 img是圖片的資料夾 convert是轉變成pygame容易讀的格式)
+background_img = pygame.image.load(os.path.join("img", "background.png")).convert() # 載入圖片路徑 
 
 # sprite
 # 創建類別 可以繼承內建sprite類別(pygame.sprite.Sprite)
@@ -141,6 +146,7 @@ while running:
 
     # 畫面顯示
     screen.fill(BLACK) # 填滿顏色(R,G,B)
+    screen.blit(background_img, (0,0)) # 畫背景(圖,左上座標)
     all_sprites.draw(screen) # 顯示sprite
     pygame.display.update() # 畫面更新
     
