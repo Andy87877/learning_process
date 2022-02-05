@@ -15,13 +15,16 @@ BLACK = (0,0,0) # 黑色
 # 遊戲初始化 and 創建視窗
 pygame.init() # 遊戲初始化
 screen = pygame.display.set_mode((WIDTH, HEIGHT)) # 設定長寬
-clock = pygame.time.Clock() # 定義電腦一秒跑幾次
+clock = pygame.time.Clock() # 定義電腦一秒跑幾次 
 pygame.display.set_caption("太空生存戰") # 更改遊戲標題
 running = True # 執行遊戲迴圈
 
 # 載入圖片 
 # (os.path是python檔案現在的路徑 img是圖片的資料夾 convert是轉變成pygame容易讀的格式)
-background_img = pygame.image.load(os.path.join("img", "background.png")).convert() # 載入圖片路徑 
+background_img = pygame.image.load(os.path.join("img", "background.png")).convert() # 載入背景圖片路徑 
+player_img = pygame.image.load(os.path.join("img", "player.png")).convert() # 載入飛船圖片路徑  
+rock_img = pygame.image.load(os.path.join("img", "rock.png")).convert() # 載入隕石圖片路徑 
+bullet_img = pygame.image.load(os.path.join("img", "bullet.png")).convert() # 載入子彈圖片路徑 
 
 # sprite
 # 創建類別 可以繼承內建sprite類別(pygame.sprite.Sprite)
@@ -29,11 +32,11 @@ class Player(pygame.sprite.Sprite): # 飛船
     def __init__(self): # 是__init__ 不是_init_
         pygame.sprite.Sprite.__init__(self) # 內建的sprite的初始函式
         # image是展現圖片
-        self.image = pygame.Surface((50, 40)) # 暫時的圖片
-        self.image.fill(GREEN)
+        self.image = pygame.transform.scale(player_img, (50, 38)) # 圖片 (transform轉換大小)
+        self.image.set_colorkey(BLACK) # 把黑色變成透明
         # rect是定位圖片
         self.rect = self.image.get_rect() # 圖片框起來
-
+  
         # 起始位置
         self.rect.centerx = WIDTH / 2 # x座標
         self.rect.bottom = HEIGHT - 10 # y座標
@@ -62,8 +65,8 @@ class Rock(pygame.sprite.Sprite): # 隕石
     def __init__(self): # 是__init__ 不是_init_
         pygame.sprite.Sprite.__init__(self) # 內建的sprite的初始函式
         # image是展現圖片
-        self.image = pygame.Surface((30, 40)) # 暫時的圖片
-        self.image.fill(RED)
+        self.image = rock_img # 圖片
+        self.image.set_colorkey(BLACK) # 把黑色變成透明
         # rect是定位圖片
         self.rect = self.image.get_rect() # 圖片框起來
 
@@ -88,8 +91,8 @@ class Bullet(pygame.sprite.Sprite): # 子彈
     def __init__(self, x, y): # 還要傳入飛船的x,y值
         pygame.sprite.Sprite.__init__(self) # 內建的sprite的初始函式
         # image是展現圖片
-        self.image = pygame.Surface((10, 20)) # 暫時的圖片
-        self.image.fill(YELLOW)
+        self.image = bullet_img # 圖片
+        self.image.set_colorkey(BLACK) # 把黑色變成透明   
         # rect是定位圖片
         self.rect = self.image.get_rect() # 圖片框起來
 
