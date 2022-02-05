@@ -1,6 +1,6 @@
 import pygame # pygame核心
 import random # 產生亂數
-import os # 載入圖片
+import os # 檔案路徑
 
 FPS = 60 # 一秒跑60次
 WIDTH = 500 # 寬
@@ -48,7 +48,23 @@ def draw_text(surf, text, size, x, y): # 把文字顯示在畫面上
     text_rect.centerx = x
     text_rect.top = y
 
-    surf.blit(text_surface, text_rect)# 顯示出來
+    surf.blit(text_surface, text_rect) # 顯示出來
+
+def new_rock(): # 生成隕石
+    r = Rock()
+    all_sprites.add(r)
+    rocks.add(r)
+
+def draw_health(surf, hp, x, y): # 顯示血量
+    if hp < 0: # 血量小於0
+        hp = 0
+    BAR_LENGTH = 100 #　血條寬度
+    BAR_HIGHT = 10 #　血條高度
+    fill = (hp/100)*BAR_LENGTH # 血量長度
+    outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HIGHT) # 血條外框
+    fill_rect = pygame.Rect(x, y, fill, BAR_HIGHT) # 血量長度
+    pygame.draw.rect(surf, GREEN, fill_rect) # 顯示血量
+    pygame.draw.rect(surf, WHITE, outline_rect, 2) # 顯示外框
 
 # sprite
 # 創建類別 可以繼承內建sprite類別(pygame.sprite.Sprite)
@@ -164,10 +180,8 @@ bullets = pygame.sprite.Group() # 判斷子彈是否碰撞
 
 player = Player() # 創建player
 all_sprites.add(player) # player加入sprite群組
-for i in range(8): # 8個隕石
-    rock = Rock() # 創建隕石
-    all_sprites.add(rock) # 隕石加入sprite群組
-    rocks.add(rock) # 判斷隕石是否碰撞的群組
+for i in range(10): # 10個隕石
+    new_rock()
 
 score = 0 # 分數
 pygame.mixer.music.play(-1) # 播出背景音樂
@@ -192,20 +206,21 @@ while running:
     for hit in hits: # hits 是列表
         score += hit.radius # 加分數
         random.choice(expl_sounds).play() # 播出爆炸音效 
-        # 補回隕石
-        r = Rock()
-        all_sprites.add(r)
-        rocks.add(r)
+        new_rock() # 補回隕石
 
     # 判斷飛船和隕石是否碰撞
     hits = pygame.sprite.spritecollide(player, rocks, True, pygame.sprite.collide_circle) # 判斷方式是圓形 
     for hit in hits: # 如果碰到
-        running = False # 退出遊戲迴圈
+        player.health -= hit.radius # 扣血
+        new_rock() # 補回隕石
+        if player.health <= 0: # 血量歸零
+            running = False # 退出遊戲迴圈
 
     # 畫面顯示
     screen.fill(BLACK) # 填滿顏色(R,G,B)
     screen.blit(background_img, (0,0)) # 畫背景(圖,左上座標)
     all_sprites.draw(screen) # 顯示sprite
     draw_text(screen, str(score), 18, WIDTH/2, 10) # 顯示遊戲分數
+    draw_health(screen, player.health, 5, 15) # 顯示血條
     pygame.display.update() # 畫面更新
     
