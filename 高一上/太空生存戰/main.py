@@ -18,7 +18,6 @@ pygame.mixer.init() # 音效初始化
 screen = pygame.display.set_mode((WIDTH, HEIGHT)) # 設定長寬
 clock = pygame.time.Clock() # 定義電腦一秒跑幾次 
 pygame.display.set_caption("太空生存戰") # 更改遊戲標題
-running = True # 執行遊戲迴圈
 
 # 載入圖片 
 # (os.path是python檔案現在的路徑 img是圖片的資料夾 convert是轉變成pygame容易讀的格式)
@@ -62,7 +61,7 @@ expl_sounds = [
 pygame.mixer.music.load(os.path.join("sound", "background.wav")) # 背景音樂
 pygame.mixer.music.set_volume(0.4) # 調整背景音樂大小
 
-font_name = pygame.font.match_font('arial') # 引入字體
+font_name = os.path.join("font.ttf") # 引用字體
 def draw_text(surf, text, size, x, y): # 把文字顯示在畫面上
     font = pygame.font.Font(font_name, size) # 創建文字物件
     text_surface = font.render(text, True, WHITE) # 渲染文字
@@ -95,6 +94,24 @@ def draw_lives(surf, lives, img, x, y): # 顯示幾條命
         img_rect.x = x + 32*i # x定位於
         img_rect.y = y # y定位於
         surf.blit(img, img_rect) # 顯示出來
+
+def draw_init(): # 初始畫面
+    screen.blit(background_img, (0,0)) # 畫背景(圖,左上座標)
+    # 顯示文字
+    draw_text(screen, '太空生存戰!', 64, WIDTH/2, HEIGHT/4)
+    draw_text(screen, 'AD 或 ←→移動飛船 空白鍵發射子彈', 22, WIDTH/2, HEIGHT/2)
+    draw_text(screen, '按任意鍵開始遊戲!', 18, WIDTH/2, HEIGHT*3/4)
+    pygame.display.update() # 畫面更新
+    waiting = True # 等玩家按開始
+    while waiting:
+        clock.tick(FPS) # 一秒最多執行FPS次
+        for event in pygame.event.get(): 
+            # pygame.event.get() 為發生的事件
+            if event.type == pygame.QUIT: # 按退出鍵
+                pygame.quit() # 遊戲退出
+            elif event.type == pygame.KEYUP: # 按下鍵盤鍵
+                waiting = False # 遊戲開始
+                    
 
 # sprite
 # 創建類別 可以繼承內建sprite類別(pygame.sprite.Sprite)
@@ -286,23 +303,30 @@ class Power(pygame.sprite.Sprite): # 寶物
         if self.rect.top > HEIGHT: # 寶物到底
             self.kill() # 移除寶物
 
-# sprite可以顯示出來
-all_sprites = pygame.sprite.Group() # 創建sprite的群組
-
-rocks = pygame.sprite.Group() # 判斷隕石是否碰撞
-bullets = pygame.sprite.Group() # 判斷子彈是否碰撞
-powers = pygame.sprite.Group() # 判斷寶物是否碰撞
-
-player = Player() # 創建player
-all_sprites.add(player) # player加入sprite群組
-for i in range(20): # 20個隕石
-    new_rock()
-
-score = 0 # 分數
 pygame.mixer.music.play(-1) # 播出背景音樂
 
 # 遊戲迴圈
+show_init = True # 顯示遊戲初始畫面
+running = True # 執行遊戲迴圈
 while running:
+    if show_init: # 遊戲初始畫面
+        draw_init() # 畫初始畫面
+        show_init = False # 開始遊戲
+        
+        # sprite可以顯示出來
+        all_sprites = pygame.sprite.Group() # 創建sprite的群組
+
+        rocks = pygame.sprite.Group() # 判斷隕石是否碰撞
+        bullets = pygame.sprite.Group() # 判斷子彈是否碰撞
+        powers = pygame.sprite.Group() # 判斷寶物是否碰撞
+
+        player = Player() # 創建player
+        all_sprites.add(player) # player加入sprite群組
+        for i in range(30): # 30個隕石
+            new_rock()
+
+        score = 0 # 分數
+
     clock.tick(FPS) # 一秒最多執行FPS次
     # 取得輸入
     for event in pygame.event.get(): 
@@ -323,7 +347,7 @@ while running:
         random.choice(expl_sounds).play() # 播出爆炸音效 
         expl = Explosion(hit.rect.center, 'lg') # 爆炸動畫
         all_sprites.add(expl) # expl加入sprite群組
-        if random.random() > 0.9: # 掉寶機率
+        if random.random() > 0.99: # 掉寶機率
             pow = Power(hit.rect.center) # 掉寶
             all_sprites.add(pow) # pow加入sprite群組
             powers.add(pow) # 判斷寶物碰撞
@@ -360,7 +384,7 @@ while running:
             
 
     if player.lives == 0 and not(death_expl.alive()): # 生命值歸零 and 執行完die
-        running = False # 退出遊戲迴圈
+        show_init = True # 顯示遊戲初始畫面
 
     # 畫面顯示
     screen.fill(BLACK) # 填滿顏色(R,G,B)
