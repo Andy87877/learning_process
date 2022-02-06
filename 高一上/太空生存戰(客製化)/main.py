@@ -115,6 +115,41 @@ def draw_init(): # 初始畫面
                 waiting = False # 遊戲開始
                 return False # 告訴電腦未退出
 
+def draw_end(): #顯示最後分數
+    screen.blit(background_img, (0,0)) # 畫背景(圖,左上座標)
+    draw_text(screen, '你的分數為'+str(score), 22, WIDTH/2, HEIGHT/2)
+    draw_text(screen, '遊玩時間為'+str(playtime)+'秒', 22, WIDTH/2, HEIGHT/2+50)
+    draw_text(screen, '按任意鍵回到首頁', 18, WIDTH/2, HEIGHT*3/4)
+    pygame.display.update() # 畫面更新
+    waiting = True # 等玩家按開始
+    while waiting:
+        clock.tick(FPS) # 一秒最多執行FPS次
+        for event in pygame.event.get(): 
+            # pygame.event.get() 為發生的事件
+            if event.type == pygame.QUIT: # 按退出鍵
+                pygame.quit() # 遊戲退出
+                return True # 告訴電腦已退出
+            elif event.type == pygame.KEYUP: # 按下鍵盤鍵
+                waiting = False # 遊戲開始
+                return False # 告訴電腦未退出
+
+def draw__control():
+    screen.blit(background_img, (0,0)) # 畫背景(圖,左上座標)
+    draw_text(screen, '1321213'+str(score), 22, WIDTH/2, HEIGHT/2)
+    draw_text(screen, '按任意鍵回到首頁', 18, WIDTH/2, HEIGHT*3/4)
+    pygame.display.update() # 畫面更新
+    waiting = True # 等玩家按開始
+    while waiting:
+        clock.tick(FPS) # 一秒最多執行FPS次
+        for event in pygame.event.get(): 
+            # pygame.event.get() 為發生的事件
+            if event.type == pygame.QUIT: # 按退出鍵
+                pygame.quit() # 遊戲退出
+                return True # 告訴電腦已退出
+            elif event.type == pygame.KEYUP: # 按下鍵盤鍵
+                waiting = False # 遊戲開始
+                return False # 告訴電腦未退出
+
 # sprite
 # 創建類別 可以繼承內建sprite類別(pygame.sprite.Sprite)
 class Player(pygame.sprite.Sprite): # 飛船
@@ -187,8 +222,6 @@ class Player(pygame.sprite.Sprite): # 飛船
     def gunup(self): # 道具 槍
         self.gun += 1 # 槍等級提升
         self.gun_time = pygame.time.get_ticks() # 紀錄升級時間
-
-
 
 class Rock(pygame.sprite.Sprite ): # 隕石
     def __init__(self): # 是__init__ 不是_init_
@@ -309,7 +342,9 @@ pygame.mixer.music.play(-1) # 播出背景音樂
 
 # 遊戲迴圈
 show_init = True # 顯示遊戲初始畫面
+end_init = False # 結束畫面
 running = True # 執行遊戲迴圈
+
 while running:
     if show_init: # 遊戲初始畫面
         close = draw_init() # 畫初始畫面
@@ -328,8 +363,16 @@ while running:
         all_sprites.add(player) # player加入sprite群組
         for i in range(30): # 30個隕石
             new_rock()
-
         score = 0 # 分數
+        playtime = pygame.time.get_ticks() # 紀錄遊玩時間
+        end_init = False
+
+    if end_init: # 顯示分數
+        close = draw_end() 
+        if close: 
+            break
+        end_init = False 
+        show_init = True
 
     clock.tick(FPS) # 一秒最多執行FPS次
     # 取得輸入
@@ -388,8 +431,8 @@ while running:
             
 
     if player.lives == 0 and not(death_expl.alive()): # 生命值歸零 and 執行完die
-        show_init = True # 顯示遊戲初始畫面
-
+        playtime = int((pygame.time.get_ticks() - playtime) / 1000)
+        end_init = True
     # 畫面顯示
     screen.fill(BLACK) # 填滿顏色(R,G,B)
     screen.blit(background_img, (0,0)) # 畫背景(圖,左上座標)
