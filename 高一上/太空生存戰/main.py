@@ -45,9 +45,15 @@ for i in range(9):
     player_expl_img = pygame.image.load(os.path.join("img", f"player_expl{i}.png")).convert() # 載入飛船爆炸圖片路徑到list裡面
     player_expl_img.set_colorkey(BLACK) # 把黑色變成透明
     expl_anim['player'].append(player_expl_img) # 飛船爆炸字典
+power_imgs = {} # 道具
+power_imgs['shield'] = pygame.image.load(os.path.join("img", "shield.png")).convert(); # 盾牌
+power_imgs['gun'] = pygame.image.load(os.path.join("img", "gun.png")).convert(); # 槍
+
 
 # 載入音效
 shoot_sound = pygame.mixer.Sound(os.path.join("sound", "shoot.wav")) # 載入射擊音效
+gun_sound = pygame.mixer.Sound(os.path.join("sound", "pow1.wav")) # 載入槍音效
+shield_sound = pygame.mixer.Sound(os.path.join("sound", "pow0.wav")) # 載入盾牌音效
 die_sound = pygame.mixer.Sound(os.path.join("sound", "rumble.wav")) # 載入飛船死亡音效
 expl_sounds = [
     pygame.mixer.Sound(os.path.join("sound", "expl0.wav")),
@@ -113,9 +119,16 @@ class Player(pygame.sprite.Sprite): # 飛船
         self.lives = 3 # 生命
         self.hidden = False # 飛船是否隱藏
         self.hide_time = 0 # 隱藏時間
+        self.gun = 1 # 子彈等級
+        self.gun_time  = 0 # 吃到道具時間
     
     def update(self): # 讓player移動
-        if self.hidden and pygame.time.get_ticks() - self.hide_time > 1000: # 如果隱藏和延遲時間已到
+        now = pygame.time.get_ticks() # 現在時間
+        if self.gun > 1 and now - self.gun_time > 5000: # 如果道具的延遲時間已到
+            self.gun -= 1 # 等級下降
+            self.gun_time = now # 設回現在時間
+
+        if self.hidden and now - self.hide_time > 1000: # 如果隱藏的延遲時間已到
             self.hidden = False # 解除隱藏
             self.rect.centerx = WIDTH / 2 # x座標
             self.rect.bottom = HEIGHT - 10 # y座標
@@ -133,15 +146,29 @@ class Player(pygame.sprite.Sprite): # 飛船
 
     def shoot(self): # 發射子彈
         if not(self.hidden): # 如果不隱藏
-            bullet = Bullet(self.rect.centerx, self.rect.top) # 回傳飛船座標
-            all_sprites.add(bullet) # 子彈加入群組
-            bullets.add(bullet) # 判斷子彈是否碰撞的群組
-            shoot_sound.play() # 播出音效 
+            if self.gun == 1: # 沒有升級(1發)
+                bullet = Bullet(self.rect.centerx, self.rect.top) # 回傳飛船座標
+                all_sprites.add(bullet) # 子彈加入群組
+                bullets.add(bullet) # 判斷子彈是否碰撞的群組
+                shoot_sound.play() # 播出音效 
+            elif self.gun >= 2: # 有升級(2發)
+                bullet1 = Bullet(self.rect.left, self.rect.centery) # 回傳飛船座標
+                bullet2 = Bullet(self.rect.right, self.rect.centery) # 回傳飛船座標
+                all_sprites.add(bullet1) # 子彈加入群組
+                all_sprites.add(bullet2) # 子彈加入群組
+                bullets.add(bullet1) # 判斷子彈是否碰撞的群組
+                bullets.add(bullet2) # 判斷子彈是否碰撞的群組
+                shoot_sound.play() # 播出音效
 
     def hide(self): # 隱藏
         self.hidden = True # 已經隱藏
         self.hide_time = pygame.time.get_ticks() # 紀錄隱藏時間
         self.rect.center = (WIDTH/2, HEIGHT+500) # 移除遊戲畫面
+
+    def gunup(self): # 道具 槍
+        self.gun += 1 # 槍等級提升
+        self.gun_time = pygame.time.get_ticks() # 紀錄升級時間
+
 
 
 class Rock(pygame.sprite.Sprite ): # 隕石
@@ -238,11 +265,33 @@ class Explosion(pygame.sprite.Sprite): # 爆炸動畫
                 self.rect = self.image.get_rect() # 重新定位中心點
                 self.rect.center = center # 新的中心點
 
+class Power(pygame.sprite.Sprite): # 寶物
+    def __init__(self, center): # 傳入隕石的信息
+        pygame.sprite.Sprite.__init__(self) # 內建的sprite的初始函式
+        self.type = random.choice(['shield', 'gun']) # 代表的寶物
+        # image是展現圖片
+        self.image = power_imgs[self.type] # 圖片
+        self.image.set_colorkey(BLACK) # 把黑色變成透明   
+        # rect是定位圖片
+        self.rect = self.image.get_rect() # 圖片框起來
+
+        # 起始位置(要依隕石的位置)
+        self.rect.center = center
+
+        # 移動速度
+        self.speedy = 3
+    
+    def update(self): 
+        self.rect.y += self.speedy
+        if self.rect.top > HEIGHT: # 寶物到底
+            self.kill() # 移除寶物
+
 # sprite可以顯示出來
 all_sprites = pygame.sprite.Group() # 創建sprite的群組
 
 rocks = pygame.sprite.Group() # 判斷隕石是否碰撞
 bullets = pygame.sprite.Group() # 判斷子彈是否碰撞
+powers = pygame.sprite.Group() # 判斷寶物是否碰撞
 
 player = Player() # 創建player
 all_sprites.add(player) # player加入sprite群組
@@ -274,6 +323,10 @@ while running:
         random.choice(expl_sounds).play() # 播出爆炸音效 
         expl = Explosion(hit.rect.center, 'lg') # 爆炸動畫
         all_sprites.add(expl) # expl加入sprite群組
+        if random.random() > 0.9: # 掉寶機率
+            pow = Power(hit.rect.center) # 掉寶
+            all_sprites.add(pow) # pow加入sprite群組
+            powers.add(pow) # 判斷寶物碰撞
         new_rock() # 補回隕石
 
     # 判斷飛船和隕石是否碰撞
@@ -290,8 +343,21 @@ while running:
             all_sprites.add(death_expl) # die加入sprite群組
             die_sound.play() # 播放死亡音效
             player.lives -= 1 # 生命值-1
-            player.health = 100 # 血量回滿
+            player.health = 100 # 血量回滿 
             player.hide() # 飛船隱藏
+
+    # 判斷飛船和寶物是否碰撞
+    hits = pygame.sprite.spritecollide(player, powers, True) # 判斷碰撞
+    for hit in hits: # 如果碰到
+        if hit.type == 'shield': # 盾牌
+            player.health += 20 # 加血
+            if player.health > 100: # 滿血
+                player.health = 100 # 就滿血
+            shield_sound.play() # 播出音效
+        elif hit.type == 'gun': # 槍
+            player.gunup() # 吃到槍
+            gun_sound.play() # 播出音效
+            
 
     if player.lives == 0 and not(death_expl.alive()): # 生命值歸零 and 執行完die
         running = False # 退出遊戲迴圈
