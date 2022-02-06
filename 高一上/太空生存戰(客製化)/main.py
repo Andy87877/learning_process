@@ -12,6 +12,18 @@ RED = (255,0,0) # 紅色
 YELLOW = (255,255,0) # 黃色
 BLACK = (0,0,0) # 黑色
 
+# 紀錄用
+score = 0 # 分數
+playtime = 0 # 總時間
+total_shoot = 0 # 總射擊
+total_shoot_hit = 0 # 總射擊隕石
+
+# 遊戲迴圈
+show_init = True # 顯示遊戲初始畫面
+end_init = False # 結束畫面
+contorl_init = False # 控制畫面
+running = True # 執行遊戲迴圈
+
 # 遊戲初始化 and 創建視窗
 pygame.init() # 遊戲初始化
 pygame.mixer.init() # 音效初始化
@@ -101,6 +113,7 @@ def draw_init(): # 初始畫面
     # 顯示文字
     draw_text(screen, '太空生存戰!', 64, WIDTH/2, HEIGHT/4)
     draw_text(screen, 'AD 或 ←→移動飛船 空白鍵發射子彈', 22, WIDTH/2, HEIGHT/2)
+    draw_text(screen, '按C到控制選單', 22, WIDTH/2, HEIGHT/2+50)
     draw_text(screen, '按任意鍵開始遊戲!', 18, WIDTH/2, HEIGHT*3/4)
     pygame.display.update() # 畫面更新
     waiting = True # 等玩家按開始
@@ -112,6 +125,8 @@ def draw_init(): # 初始畫面
                 pygame.quit() # 遊戲退出
                 return True # 告訴電腦已退出
             elif event.type == pygame.KEYUP: # 按下鍵盤鍵
+                if event.key == pygame.K_c:
+                    contorl_init = True
                 waiting = False # 遊戲開始
                 return False # 告訴電腦未退出
 
@@ -119,7 +134,9 @@ def draw_end(): #顯示最後分數
     screen.blit(background_img, (0,0)) # 畫背景(圖,左上座標)
     draw_text(screen, '你的分數為'+str(score), 22, WIDTH/2, HEIGHT/2)
     draw_text(screen, '遊玩時間為'+str(playtime)+'秒', 22, WIDTH/2, HEIGHT/2+50)
-    draw_text(screen, '按任意鍵回到首頁', 18, WIDTH/2, HEIGHT*3/4)
+    draw_text(screen, '射擊次數為'+str(total_shoot), 22, WIDTH/2, HEIGHT/2+100)
+    draw_text(screen, '射擊到隕石的次數為'+str(total_shoot_hit), 22, WIDTH/2, HEIGHT/2+150)
+    draw_text(screen, '按任意鍵回到首頁', 18, WIDTH/2, HEIGHT/2+200)
     pygame.display.update() # 畫面更新
     waiting = True # 等玩家按開始
     while waiting:
@@ -133,7 +150,7 @@ def draw_end(): #顯示最後分數
                 waiting = False # 遊戲開始
                 return False # 告訴電腦未退出
 
-def draw__control():
+def draw_control():
     screen.blit(background_img, (0,0)) # 畫背景(圖,左上座標)
     draw_text(screen, '1321213'+str(score), 22, WIDTH/2, HEIGHT/2)
     draw_text(screen, '按任意鍵回到首頁', 18, WIDTH/2, HEIGHT*3/4)
@@ -340,11 +357,6 @@ class Power(pygame.sprite.Sprite): # 寶物
 
 pygame.mixer.music.play(-1) # 播出背景音樂
 
-# 遊戲迴圈
-show_init = True # 顯示遊戲初始畫面
-end_init = False # 結束畫面
-running = True # 執行遊戲迴圈
-
 while running:
     if show_init: # 遊戲初始畫面
         close = draw_init() # 畫初始畫面
@@ -364,6 +376,8 @@ while running:
         for i in range(30): # 30個隕石
             new_rock()
         score = 0 # 分數
+        total_shoot = 0 # 總射擊
+        total_shoot_hit = 0 # 設到隕石
         playtime = pygame.time.get_ticks() # 紀錄遊玩時間
         end_init = False
 
@@ -374,6 +388,12 @@ while running:
         end_init = False 
         show_init = True
 
+    if contorl_init: # 控制頁面
+        close = draw_control() 
+        if close: 
+            break
+        contorl_init = False 
+
     clock.tick(FPS) # 一秒最多執行FPS次
     # 取得輸入
     for event in pygame.event.get(): 
@@ -383,6 +403,7 @@ while running:
         elif event.type == pygame.KEYDOWN: # 按下鍵盤鍵
             if event.key == pygame.K_SPACE: # 按下空白鍵
                 player.shoot() # 發射子彈
+                total_shoot += 1
 
     # 更新遊戲
     all_sprites.update() # 執行all_sprites的update函式
@@ -399,6 +420,7 @@ while running:
             all_sprites.add(pow) # pow加入sprite群組
             powers.add(pow) # 判斷寶物碰撞
         new_rock() # 補回隕石
+        total_shoot_hit += 1
 
     # 判斷飛船和隕石是否碰撞
     hits = pygame.sprite.spritecollide(player, rocks, True, pygame.sprite.collide_circle) # 判斷方式是圓形 
@@ -442,3 +464,4 @@ while running:
     draw_lives(screen, player.lives, player_mini_img, WIDTH - 100, 15) # 顯示生命值
     pygame.display.update() # 畫面更新
     
+# 分數 遊玩時間 發射的子彈數 射到隕石次數 吃到盾牌 吃到槍 當場隕石 飛船速度 隕石速度
