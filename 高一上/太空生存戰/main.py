@@ -25,6 +25,7 @@ background_img = pygame.image.load(os.path.join("img", "background.png")).conver
 player_img = pygame.image.load(os.path.join("img", "player.png")).convert() # 載入飛船圖片路徑  
 player_mini_img = pygame.transform.scale(player_img, (25, 19)) # 變成小飛船(檢視還有幾條命)
 player_mini_img.set_colorkey(BLACK) # 把黑色變成透明
+pygame.display.set_icon(player_mini_img) # 更改遊戲圖片
 bullet_img = pygame.image.load(os.path.join("img", "bullet.png")).convert() # 載入子彈圖片路徑 
 # rock_img = pygame.image.load(os.path.join("img", "rock.png")).convert() # 載入隕石圖片路徑 
 rock_imgs = [] # 隕石存在列表裡
@@ -109,9 +110,10 @@ def draw_init(): # 初始畫面
             # pygame.event.get() 為發生的事件
             if event.type == pygame.QUIT: # 按退出鍵
                 pygame.quit() # 遊戲退出
+                return True # 告訴電腦已退出
             elif event.type == pygame.KEYUP: # 按下鍵盤鍵
                 waiting = False # 遊戲開始
-                    
+                return False # 告訴電腦未退出
 
 # sprite
 # 創建類別 可以繼承內建sprite類別(pygame.sprite.Sprite)
@@ -310,7 +312,9 @@ show_init = True # 顯示遊戲初始畫面
 running = True # 執行遊戲迴圈
 while running:
     if show_init: # 遊戲初始畫面
-        draw_init() # 畫初始畫面
+        close = draw_init() # 畫初始畫面
+        if close: # 玩家已離開
+            break
         show_init = False # 開始遊戲
         
         # sprite可以顯示出來
