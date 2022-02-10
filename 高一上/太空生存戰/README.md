@@ -2,6 +2,7 @@
 用python內建的pygame來製作一款遊戲。
 
 Github https://reurl.cc/k7nA9L
+
 學習&製作過程https://youtu.be/6Pz9QQV_yeg
 
 心得:
